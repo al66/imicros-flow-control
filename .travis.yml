@@ -1,0 +1,44 @@
+language: node_js
+
+#jdk:
+# Needed for local Neo4j 2.0+
+#- oraclejdk8
+
+# services:
+# - docker
+# - redis-server
+#- neo4j
+
+env:
+# Test across multiple versions of Neo4j:
+- NEO4J_VERSION="3.5.12"
+
+node_js:
+  - stable
+
+before_install:
+# Install Neo4j locally:
+- wget dist.neo4j.org/neo4j-community-$NEO4J_VERSION-unix.tar.gz
+- tar -xzf neo4j-community-$NEO4J_VERSION-unix.tar.gz
+- neo4j-community-$NEO4J_VERSION/bin/neo4j start
+# HACK need to change the password initially; changing it and then reverting:
+- sleep 10  # give Neo4J some time to start
+- curl -v POST http://neo4j:neo4j@127.0.0.1:7474/user/neo4j/password -d"password=neo4j2"
+- curl -v POST http://neo4j:neo4j2@127.0.0.1:7474/user/neo4j/password -d"password=neo4j"
+
+install:
+  - npm install
+
+script:
+  - npm run test-travis
+  
+# Send coverage data to Coveralls
+after_script:
+  - cat coverage/lcov.info | node_modules/coveralls/bin/coveralls.js  
+
+notifications:
+  email:
+    recipients:
+      - andreas.leinen@imicros.de
+    on_success: never # default: change
+    on_failure: always # default: always
