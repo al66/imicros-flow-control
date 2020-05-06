@@ -60,6 +60,6 @@ broker.createService(Query, Object.assign({
 broker.start();
 ```
 ## Actions
-- next { processId, elementId } => { processId, elementId, type, name (optional), position (optional), direction (optional), interaction (optional), from (optional), to (optional), attributes (optional) }  
+- next { processId, elementId } => [{ processId, elementId, type, name (optional), position (optional), direction (optional), interaction (optional), from (optional), to (optional), attributes (optional) }]  
 - get { processId, elementId } => { processId, elementId, type, name (optional), position (optional), direction (optional), interaction (optional), from (optional), to (optional), attributes (optional) }
-- getAll { processId } => { processId, elementId, type, name (optional), position (optional), direction (optional), interaction (optional), from (optional), to (optional), attributes (optional) }
+- getAll { processId } => [{ processId, elementId, type, name (optional), position (optional), direction (optional), interaction (optional), from (optional), to (optional), attributes (optional) }]

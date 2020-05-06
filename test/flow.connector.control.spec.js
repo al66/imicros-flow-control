@@ -95,10 +95,7 @@ describe("Test connector", () => {
         it("it should add a process", async () => {
             let process = { 
                 name: "my first process",
-                owner: {
-                    type: "group",
-                    id: `group1-${timestamp}`
-                }
+                ownerId: `group1-${timestamp}`
             };
             let res = await connector.addProcess(process);
             expect(res).toBeDefined();
@@ -115,10 +112,7 @@ describe("Test connector", () => {
                 position: Constants.START_EVENT,
                 type: Constants.DEFAULT_EVENT,
                 direction: Constants.CATCHING_EVENT,
-                owner: {
-                    type: "group",
-                    id: `group1-${timestamp}`
-                }
+                ownerId: `group1-${timestamp}`
             };
             let res = await connector.addEvent(event);
             expect(res).toBeDefined();
@@ -132,10 +126,7 @@ describe("Test connector", () => {
             let task = {
                 processId: processes["P1"],
                 name: "my first task in the process",
-                owner: {
-                    type: "group",
-                    id: `group1-${timestamp}`
-                },
+                ownerId: `group1-${timestamp}`,
                 attributes: {
                     service: "test",
                     action: "action",
@@ -157,10 +148,7 @@ describe("Test connector", () => {
             let task = {
                 processId: processes["P1"],
                 name: "my second task in the process",
-                owner: {
-                    type: "group",
-                    id: `group1-${timestamp}`
-                }
+                ownerId: `group1-${timestamp}`
             };
             let res = await connector.addTask(task);
             expect(res).toBeDefined();
@@ -174,10 +162,7 @@ describe("Test connector", () => {
             let task = {
                 processId: processes["P1"],
                 name: "my third task in the process",
-                owner: {
-                    type: "group",
-                    id: `group1-${timestamp}`
-                }
+                ownerId: `group1-${timestamp}`
             };
             let res = await connector.addTask(task);
             expect(res).toBeDefined();
@@ -191,10 +176,7 @@ describe("Test connector", () => {
             let gateway = {
                 processId: processes["P1"],
                 type: Constants.EXCLUSIVE_GATEWAY,
-                owner: {
-                    type: "group",
-                    id: `group1-${timestamp}`
-                },
+                ownerId: `group1-${timestamp}`,
                 rule: "@@ > result:=0 @ a :: > b => result := 1",
                 function: (c) => { let r=0; if (c.a > c.b) r=1; return r; }  
             };
@@ -210,10 +192,7 @@ describe("Test connector", () => {
             let connection = {
                 fromId: events["S1"],
                 toId: gateways["G1"],
-                owner: {
-                    type: "group",
-                    id: `group1-${timestamp}`
-                }
+                ownerId: `group1-${timestamp}`
             };
             let res = await connector.addSequence(connection);
             expect(res).toBeDefined();
@@ -230,10 +209,7 @@ describe("Test connector", () => {
             let connection = {
                 fromId: gateways["G1"],
                 toId: tasks["T1"],
-                owner: {
-                    type: "group",
-                    id: `group1-${timestamp}`
-                }
+                ownerId: `group1-${timestamp}`
             };
             let res = await connector.addSequence(connection);
             expect(res).toBeDefined();
@@ -255,10 +231,7 @@ describe("Test connector", () => {
                     rule: "@@ > result:=0 @ a :: > b => result := 1",
                     function: (c) => { let r=0; if (c.a > c.b) r=1; return r; }
                 },
-                owner: {
-                    type: "group",
-                    id: `group1-${timestamp}`
-                }
+                ownerId: `group1-${timestamp}`
             };
             let res = await connector.addSequence(connection);
             expect(res).toBeDefined();
@@ -280,10 +253,7 @@ describe("Test connector", () => {
                     rule: "@@ > result:=0 @ a :: > b => result := 2",
                     function: (c) => { let r=0; if (c.a > c.b) r=2; return r; }  ,
                 },
-                owner: {
-                    type: "group",
-                    id: `group1-${timestamp}`
-                }
+                ownerId: `group1-${timestamp}`
             };
             let res = await connector.addSequence(connection);
             expect(res).toBeDefined();

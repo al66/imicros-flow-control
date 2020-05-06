@@ -63,11 +63,7 @@ describe("Test controller service", () => {
         
         it("it should add a new process", () => {
             let params = { 
-                name: "my first process",
-                owner: {
-                    type: "group",
-                    id: `g1-${timestamp}`
-                }
+                name: "my first process"
             };
             return broker.call("v1.control.addProcess", params, opts).then(res => {
                 expect(res).toBeDefined();
