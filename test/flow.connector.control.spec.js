@@ -90,7 +90,7 @@ describe("Test connector", () => {
     
     describe("Test control", () => {
         
-        let processes = [], tasks = [], gateways = [], events = [];
+        let processes = [], tasks = [], gateways = [], events = [], sequences = [];
         
         it("it should add a process", async () => {
             let process = { 
@@ -122,6 +122,25 @@ describe("Test connector", () => {
             events["S1"] = res[0].id;
         });
    
+        it("it should get element event ", async () => {
+            let element = {
+                processId: processes["P1"],
+                elementId: events["S1"],
+                ownerId: `group1-${timestamp}`
+            };
+            let res = await connector.getEvent(element);
+            expect(res).toBeDefined();
+            expect(res[0]).toMatchObject({
+                processId: processes["P1"],
+                name: "mail.received",
+                position: Constants.START_EVENT,
+                type: Constants.DEFAULT_EVENT,
+                direction: Constants.CATCHING_EVENT,
+                uid: events["S1"],
+                ownerId: `group1-${timestamp}`
+            });
+        });
+        
         it("it should add a task", async () => {
             let task = {
                 processId: processes["P1"],
@@ -144,6 +163,37 @@ describe("Test connector", () => {
             tasks["T1"] = res[0].id;
         });
    
+        it("it should get element task ", async () => {
+            let task = {
+                processId: processes["P1"],
+                name: "my first task in the process",
+                ownerId: `group1-${timestamp}`,
+                attributes: {
+                    service: "test",
+                    action: "action",
+                    map: { 
+                        attrib1: "context.firststep.result",
+                        attrib2: "context.secondstep.result"
+                    }
+                }
+            };
+            let element = {
+                processId: processes["P1"],
+                elementId: tasks["T1"],
+                ownerId: `group1-${timestamp}`
+            };
+            let res = await connector.getTask(element);
+            expect(res).toBeDefined();
+            expect(res[0]).toMatchObject({
+                processId: task.processId,
+                name: task.name,
+                type: expect.any(String),
+                ownerId: task.ownerId,
+                uid: expect.any(String),
+                attributes: task.attributes
+            });
+        });
+        
         it("it should add a second task", async () => {
             let task = {
                 processId: processes["P1"],
@@ -177,8 +227,10 @@ describe("Test connector", () => {
                 processId: processes["P1"],
                 type: Constants.EXCLUSIVE_GATEWAY,
                 ownerId: `group1-${timestamp}`,
-                rule: "@@ > result:=0 @ a :: > b => result := 1",
-                function: (c) => { let r=0; if (c.a > c.b) r=1; return r; }  
+                attributes: {
+                    rule: "@@ > result:=0 @ a :: > b => result := 1",
+                    function: "(c) => { let r=0; if (c.a > c.b) r=1; return r; }"  
+                }
             };
             let res = await connector.addGateway(gateway);
             expect(res).toBeDefined();
@@ -186,6 +238,26 @@ describe("Test connector", () => {
                 id: expect.any(String)
             }));
             gateways["G1"] = res[0].id;
+        });
+
+        it("it should get element gateway ", async () => {
+            let element = {
+                processId: processes["P1"],
+                elementId: gateways["G1"],
+                ownerId: `group1-${timestamp}`
+            };
+            let res = await connector.getGateway(element);
+            expect(res).toBeDefined();
+            expect(res[0]).toMatchObject({
+                processId: processes["P1"],
+                type: Constants.EXCLUSIVE_GATEWAY,
+                uid: gateways["G1"],
+                ownerId: `group1-${timestamp}`,
+                attributes: {
+                    rule: "@@ > result:=0 @ a :: > b => result := 1",
+                    function: "(c) => { let r=0; if (c.a > c.b) r=1; return r; }"  
+                }
+            });
         });
    
         it("it should add sequence flow from event to gateway", async () => {
@@ -200,9 +272,30 @@ describe("Test connector", () => {
                 connection: {
                     from: events["S1"],
                     to: gateways["G1"],
-                    type: Constants.SEQUENCE_STANDARD
+                    type: Constants.SEQUENCE_STANDARD,
+                    uid: expect.any(String)
                 }
             }));
+            sequences.push(res[0].connection);
+            console.log(sequences[0]);
+        });
+   
+        it("it should get element sequence ", async () => {
+            let element = {
+                processId: processes["P1"],
+                elementId: sequences[0].uid,
+                ownerId: `group1-${timestamp}`
+            };
+            let res = await connector.getSequence(element);
+            expect(res).toBeDefined();
+            expect(res[0]).toMatchObject({
+                processId: processes["P1"],
+                from: sequences[0].from,
+                to: sequences[0].to,
+                type: sequences[0].type,
+                uid: sequences[0].uid,
+                ownerId: `group1-${timestamp}`
+            });
         });
    
         it("it should add sequence flow from gateway to task", async () => {
@@ -217,9 +310,11 @@ describe("Test connector", () => {
                 connection: {
                     from: gateways["G1"],
                     to: tasks["T1"],
-                    type: Constants.SEQUENCE_STANDARD
+                    type: Constants.SEQUENCE_STANDARD,
+                    uid: expect.any(String)
                 }
             }));
+            sequences.push(res[0].connection);
         });
    
         it("it should add a conditional sequence flow from task 1 to task 2 ", async () => {
@@ -239,7 +334,8 @@ describe("Test connector", () => {
                 connection: {
                     from: tasks["T1"],
                     to: tasks["T2"],
-                    type: Constants.SEQUENCE_CONDITIONAL
+                    type: Constants.SEQUENCE_CONDITIONAL,
+                    uid: expect.any(String)
                 }
             }));
         });
@@ -261,11 +357,144 @@ describe("Test connector", () => {
                 connection: {
                     from: tasks["T1"],
                     to: tasks["T3"],
-                    type: Constants.SEQUENCE_CONDITIONAL
+                    type: Constants.SEQUENCE_CONDITIONAL,
+                    uid: expect.any(String)
                 }
             }));
         });
    
+        it("it should get sequence from event to gateway ", async () => {
+            let element = {
+                processId: processes["P1"],
+                elementId: events["S1"],
+                ownerId: `group1-${timestamp}`
+            };
+            let res = await connector.getNext(element);
+            expect(res).toBeDefined();
+            expect(res[0]).toMatchObject({
+                processId: processes["P1"],
+                uid: sequences[0].uid,
+                type: sequences[0].type,
+                ownerId: `group1-${timestamp}`
+            });
+        });
+   
+        it("it should get gateway ", async () => {
+            let element = {
+                processId: processes["P1"],
+                elementId: sequences[0].uid,
+                ownerId: `group1-${timestamp}`
+            };
+            let res = await connector.getNext(element);
+            expect(res).toBeDefined();
+            expect(res[0]).toMatchObject({
+                processId: processes["P1"],
+                uid: gateways["G1"],
+                type: Constants.EXCLUSIVE_GATEWAY,
+                ownerId: `group1-${timestamp}`
+            });
+        });        
+        
+        it("it should get all elements of the process ", async () => {
+            let process = {
+                processId: processes["P1"],
+                ownerId: `group1-${timestamp}`
+            };
+            let res = await connector.getElements(process);
+            expect(res).toBeDefined();
+            expect(res).toContainEqual(expect.objectContaining({
+                processId: processes["P1"],
+                uid: gateways["G1"],
+                type: Constants.EXCLUSIVE_GATEWAY,
+                ownerId: `group1-${timestamp}`
+            }));
+            expect(res).toContainEqual(expect.objectContaining({
+                processId: processes["P1"],
+                uid: sequences[0].uid,
+                type: sequences[0].type,
+                ownerId: `group1-${timestamp}`
+            }));
+            expect(res).toContainEqual(expect.objectContaining({
+                processId: processes["P1"],
+                uid: sequences[1].uid,
+                type: sequences[1].type,
+                ownerId: `group1-${timestamp}`
+            }));
+            expect(res).toContainEqual(expect.objectContaining({
+                processId: processes["P1"],
+                uid: events["S1"],
+                type: Constants.DEFAULT_EVENT,
+                ownerId: `group1-${timestamp}`
+            }));
+            expect(res).toContainEqual(expect.objectContaining({
+                processId: processes["P1"],
+                uid: tasks["T1"],
+                type: expect.any(String),
+                ownerId: `group1-${timestamp}`
+            }));
+            expect(res).toContainEqual(expect.objectContaining({
+                processId: processes["P1"],
+                uid: tasks["T2"],
+                type: expect.any(String),
+                ownerId: `group1-${timestamp}`
+            }));
+            expect(res).toContainEqual(expect.objectContaining({
+                processId: processes["P1"],
+                uid: tasks["T3"],
+                type: expect.any(String),
+                ownerId: `group1-${timestamp}`
+            }));
+        });        
+
+        it("it should add an second event", async () => {
+            let event = {
+                processId: processes["P1"],
+                name: "user.found",
+                position: Constants.INTERMEDIATE_EVENT,
+                type: Constants.DEFAULT_EVENT,
+                direction: Constants.CATCHING_EVENT,
+                ownerId: `group1-${timestamp}`
+            };
+            let res = await connector.addEvent(event);
+            expect(res).toBeDefined();
+            expect(res).toContainEqual(expect.objectContaining({
+                id: expect.any(String)
+            }));
+            events["S2"] = res[0].id;
+        });
+   
+        
+        it("it should get first event as subscription", async () => {
+            let event = {
+                name: "mail.received",
+                ownerId: `group1-${timestamp}`
+            };
+            let res = await connector.getSubscriptions(event);
+            expect(res).toBeDefined();
+            expect(res).toContainEqual(expect.objectContaining({
+                processId: processes["P1"],
+                elementId: events["S1"],
+                type: expect.any(String),
+                ownerId: `group1-${timestamp}`
+            }));
+        });
+   
+        it("it should get second event as subscription", async () => {
+            let event = {
+                name: "user.found",
+                ownerId: `group1-${timestamp}`
+            };
+            let res = await connector.getSubscriptions(event);
+            expect(res).toBeDefined();
+            expect(res).toContainEqual(expect.objectContaining({
+                processId: processes["P1"],
+                elementId: events["S2"],
+                type: expect.any(String),
+                ownerId: `group1-${timestamp}`
+            }));
+        });
+   
+        
         /*
         it("it should delete sequence flow from event to gateway", async () => {
             let connection = {
