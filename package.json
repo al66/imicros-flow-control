@@ -9,7 +9,9 @@
   "scripts": {
     "test": "jest --coverage --no-cache",
     "test-local": "jest --coverage --no-cache --config=local.js",
-    "test-conn": "jest ./test/flow.connector.control.spec.js --no-cache --config=local.js"
+    "test-conn": "jest ./test/flow.connector.control.spec.js --no-cache --config=local.js",
+    "test-control": "jest ./test/flow.control.spec.js --no-cache --config=local.js",
+    "test-instance": "jest ./test/flow.instance.spec.js --no-cache --config=local.js"
   },
   "jest": {
     "collectCoverageFrom": [

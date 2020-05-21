@@ -90,7 +90,7 @@ describe("Test controller service", () => {
         it("it should add an event", async () => {
             let params = { 
                 processId: processes["P1"],
-                name: "mail.received",
+                name: "mail.received." + timestamp,
                 position: Constants.START_EVENT,
                 type: Constants.DEFAULT_EVENT,
                 direction: Constants.CATCHING_EVENT
@@ -115,7 +115,7 @@ describe("Test controller service", () => {
                     processId: processes["P1"],
                     uid: events["S1"],
                     ownerId: ownerId,
-                    name: "mail.received",
+                    name: "mail.received." + timestamp,
                     position: Constants.START_EVENT,
                     type: Constants.DEFAULT_EVENT,
                     direction: Constants.CATCHING_EVENT
@@ -125,13 +125,67 @@ describe("Test controller service", () => {
    
         it("it should get subscriptions", async () => {
             let params = { 
-                name: "mail.received"
+                name: "mail.received." + timestamp
             };
             return broker.call("v1.query.subscriptions", params, opts).then(res => {
                 expect(res).toBeDefined();
                 expect(res).toContainEqual(expect.objectContaining({
                     processId: processes["P1"],
                     elementId: events["S1"],
+                    ownerId: ownerId,
+                    type: Constants.DEFAULT_EVENT
+                }));
+            });
+        });
+   
+        it("it should add a core process", () => {
+            let params = { 
+                name: "my core process"
+            };
+            opts.meta.acl.core = true;
+            return broker.call("v1.control.addProcess", params, opts).then(res => {
+                expect(res).toBeDefined();
+                expect(res).toContainEqual(expect.objectContaining({
+                    id: expect.any(String)
+                }));
+                processes["PC1"] = res[0].id;
+            });
+            
+        });
+        
+        it("it should add a core event subscription", async () => {
+            let params = { 
+                processId: processes["PC1"],
+                name: "mail.received." + timestamp,
+                position: Constants.START_EVENT,
+                type: Constants.DEFAULT_EVENT,
+                direction: Constants.CATCHING_EVENT
+            };
+            return broker.call("v1.control.addEvent", params, opts).then(res => {
+                expect(res).toBeDefined();
+                expect(res).toContainEqual(expect.objectContaining({
+                    id: expect.any(String)
+                }));
+                events["SC1"] = res[0].id;
+            });
+        });
+   
+        it("it should get subscriptions including core subscription", async () => {
+            let params = { 
+                name: "mail.received." + timestamp
+            };
+            return broker.call("v1.query.subscriptions", params, opts).then(res => {
+                expect(res).toBeDefined();
+                expect(res.length).toEqual(2);
+                expect(res).toContainEqual(expect.objectContaining({
+                    processId: processes["P1"],
+                    elementId: events["S1"],
+                    ownerId: ownerId,
+                    type: Constants.DEFAULT_EVENT
+                }));
+                expect(res).toContainEqual(expect.objectContaining({
+                    processId: processes["PC1"],
+                    elementId: events["SC1"],
                     ownerId: ownerId,
                     type: Constants.DEFAULT_EVENT
                 }));

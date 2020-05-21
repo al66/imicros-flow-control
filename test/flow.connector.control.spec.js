@@ -4,7 +4,9 @@ const Connector = require("../lib/connector/neo4j");
 const { ServiceBroker } = require("moleculer");
 //const { Serializer } = require("../index");
 const Constants = require("../lib/util/constants");
+const { v4: uuid } = require("uuid");
 
+const ownerId = uuid();
 const timestamp = Date.now();
 //const serializer = new Serializer();
 //const util = require("util");
@@ -494,7 +496,6 @@ describe("Test connector", () => {
             }));
         });
    
-        
         /*
         it("it should delete sequence flow from event to gateway", async () => {
             let connection = {
@@ -569,6 +570,140 @@ describe("Test connector", () => {
         
     });
 
+    describe("Test instance", () => {
+        
+        let instances = [];
+        
+        
+        it("it should create an instance", async () => {
+            let instance = {
+                processId: uuid(),
+                ownerId: ownerId,
+                instanceId: uuid(),
+                status: Constants.INSTANCE_RUNNING
+            };
+            instances.push(instance);
+            let res = await connector.updateInstance(instance);
+            expect(res).toBeDefined();
+            expect(res.length).toEqual(1);
+            expect(res[0]).toEqual(instance);
+        });
+        
+        it("it should update an instance", async () => {
+            let instance = {
+                processId: instances[0].processId,
+                ownerId: instances[0].ownerId,
+                instanceId: instances[0].instanceId,
+                status: Constants.INSTANCE_FAILED
+            };
+            let res = await connector.updateInstance(instance);
+            expect(res).toBeDefined();
+            expect(res.length).toEqual(1);
+            expect(res[0]).toEqual(instance);
+            instances[0].status = instance.status;
+        });
+        
+        it("it should create a second instance", async () => {
+            let instance = {
+                processId: instances[0].processId,
+                ownerId: ownerId,
+                instanceId: uuid(),
+                status: Constants.INSTANCE_RUNNING
+            };
+            instances.push(instance);
+            let res = await connector.updateInstance(instance);
+            expect(res).toBeDefined();
+            expect(res.length).toEqual(1);
+            expect(res[0]).toEqual(instance);
+        });
+        
+        it("it should create a third instance", async () => {
+            let instance = {
+                processId: instances[0].processId,
+                ownerId: ownerId,
+                instanceId: uuid(),
+                status: Constants.INSTANCE_RUNNING
+            };
+            instances.push(instance);
+            let res = await connector.updateInstance(instance);
+            expect(res).toBeDefined();
+            expect(res.length).toEqual(1);
+            expect(res[0]).toEqual(instance);
+        });
+        
+        it("it should return all instances", async () => {
+            let selection = {
+                processId: instances[0].processId,
+                ownerId: instances[0].ownerId
+            };
+            let res = await connector.getInstances(selection);
+            expect(res).toBeDefined();
+            expect(res.length).toEqual(3);
+            console.log(res);
+        });
+        
+        it("it should return the failed instance", async () => {
+            let selection = {
+                processId: instances[0].processId,
+                ownerId: instances[0].ownerId,
+                failed: true
+            };
+            let res = await connector.getInstances(selection);
+            expect(res).toBeDefined();
+            expect(res.length).toEqual(1);
+            expect(res).toContainEqual(expect.objectContaining(instances[0]));
+            console.log(res);
+        });
+        
+        it("it should return the two running instances", async () => {
+            let selection = {
+                processId: instances[0].processId,
+                ownerId: instances[0].ownerId,
+                running: true
+            };
+            let res = await connector.getInstances(selection);
+            expect(res).toBeDefined();
+            expect(res.length).toEqual(2);
+            expect(res).toContainEqual(expect.objectContaining(instances[1]));
+            expect(res).toContainEqual(expect.objectContaining(instances[2]));
+            console.log(res);
+        });
+        
+        it("it should delete an instance", async () => {
+            let instance = {
+                processId: instances[0].processId,
+                ownerId: instances[0].ownerId,
+                instanceId: instances[0].instanceId
+            };
+            let res = await connector.deleteInstance(instance);
+            expect(res).toBeDefined();
+            expect(res.length).toEqual(0);
+        });
+        
+        it("it should delete the second instance", async () => {
+            let instance = {
+                processId: instances[1].processId,
+                ownerId: instances[1].ownerId,
+                instanceId: instances[1].instanceId
+            };
+            let res = await connector.deleteInstance(instance);
+            expect(res).toBeDefined();
+            expect(res.length).toEqual(0);
+        });
+        
+        it("it should delete the third instance", async () => {
+            let instance = {
+                processId: instances[2].processId,
+                ownerId: instances[2].ownerId,
+                instanceId: instances[2].instanceId
+            };
+            let res = await connector.deleteInstance(instance);
+            expect(res).toBeDefined();
+            expect(res.length).toEqual(0);
+        });
+        
+    });
+    
     describe("Test stop broker", () => {
         it("should stop the broker", async () => {
             expect.assertions(1);
