@@ -496,6 +496,21 @@ describe("Test connector", () => {
             }));
         });
    
+        it("it should return sequence", async () => {
+            let element = {
+                processId: processes["P1"],
+                elementId: events["S1"],
+                ownerId: `group1-${timestamp}`
+            };
+            let res = await connector.getNext(element);
+            expect(res).toBeDefined();
+            expect(res).toContainEqual(expect.objectContaining({
+                processId: processes["P1"],
+                uid: sequences[0].uid,
+                type: expect.any(String),
+                ownerId: `group1-${timestamp}`
+            }));
+        });
         /*
         it("it should delete sequence flow from event to gateway", async () => {
             let connection = {
