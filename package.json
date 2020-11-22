@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "jest --coverage --no-cache --silent",
+    "test-travis": "jest --coverage --no-cache --config=travis.js --silent",
     "test-local": "jest --coverage --no-cache --config=local.js --silent",
     "test-conn": "jest ./test/connector.spec.js --no-cache --config=local.js",
     "test-control": "jest ./test/flow.control.spec.js --no-cache --config=local.js",
