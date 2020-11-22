@@ -4,11 +4,16 @@ const { ServiceBroker } = require("moleculer");
 const { Controller } = require("../index");
 const { Query } = require("../index");
 const Constants = require("../lib/util/constants");
-const { v4: uuidv4 } = require("uuid");
+// const { v4: uuidv4 } = require("uuid");
 
-const ownerId = uuidv4();
-const userId = uuidv4();
-const timestamp = Date.now();
+// const timestamp = Date.now();
+
+// helper & mocks
+const { Store, load } = require("./helper/store");
+const { ACL, meta, ownerId } = require("./helper/acl");
+
+// const util = require("util");
+
 
 describe("Test controller service", () => {
 
@@ -28,6 +33,7 @@ describe("Test controller service", () => {
             });
             service = await broker.createService(Controller, Object.assign({ 
                 name: "v1.control",
+                mixins: [Store()],
                 settings: {
                     db: {
                         uri: process.env.URI,
@@ -46,6 +52,8 @@ describe("Test controller service", () => {
                     }
                 }
             }));
+            // Start additional services
+            [ACL].map(service => { return broker.createService(service); }); 
             await broker.start();
             expect(service).toBeDefined();
             expect(queryService).toBeDefined();
@@ -53,287 +61,309 @@ describe("Test controller service", () => {
 
     });
 
-    describe("Test controller actions", () => {
-    
-       let opts, processes = [], tasks = [], gateways = [], events = [], sequences = [];
+    describe("Test controller", () => {
+
+        let opts, process, secondProcess, secondVersion, element;
         
         beforeEach(() => {
             opts = { 
-                meta: { 
-                    ownerId: ownerId,
-                    acl: {
-                        accessToken: "this is the access token",
-                        ownerId: ownerId,
-                        unrestricted: true
-                    }, 
-                    user: { 
-                        id: userId , 
-                        email: `${userId}@host.com` }
-                } 
+                meta: meta
             };
         });
         
-        it("it should add a new process", () => {
-            let params = { 
-                name: "my first process"
+        it("it should deploy the process", async () => {
+            load(ownerId,"UserRequestResetPassword.bpmn","assets/UserRequestResetPassword.bpmn");
+            let params = {
+                name: "UserRequestResetPassword.bpmn"
             };
-            return broker.call("v1.control.addProcess", params, opts).then(res => {
+            return broker.call("v1.control.deployProcess", params, opts).then(res => {
                 expect(res).toBeDefined();
-                expect(res).toContainEqual(expect.objectContaining({
-                    id: expect.any(String)
-                }));
-                processes["P1"] = res[0].id;
+                // console.log(util.inspect(res, {showHidden: false, depth: null}));
+                expect(res).toEqual({
+                    processId: expect.any(String),
+                    versionId: expect.any(String)
+                });
+                process = res;
             });
-            
+                
         });
-        
-        it("it should add an event", async () => {
-            let params = { 
-                processId: processes["P1"],
-                name: "mail.received." + timestamp,
-                position: Constants.START_EVENT,
-                type: Constants.DEFAULT_EVENT,
-                direction: Constants.CATCHING_EVENT
-            };
-            return broker.call("v1.control.addEvent", params, opts).then(res => {
-                expect(res).toBeDefined();
-                expect(res).toContainEqual(expect.objectContaining({
-                    id: expect.any(String)
-                }));
-                events["S1"] = res[0].id;
-            });
-        });
-   
-        it("it should get the event", async () => {
-            let params = { 
-                processId: processes["P1"],
-                elementId: events["S1"]
-            };
-            return broker.call("v1.query.getEvent", params, opts).then(res => {
-                expect(res).toBeDefined();
-                expect(res).toContainEqual(expect.objectContaining({
-                    processId: processes["P1"],
-                    uid: events["S1"],
-                    ownerId: ownerId,
-                    name: "mail.received." + timestamp,
-                    position: Constants.START_EVENT,
-                    type: Constants.DEFAULT_EVENT,
-                    direction: Constants.CATCHING_EVENT
-                }));
-            });
-        });
-   
-        it("it should get subscriptions", async () => {
-            let params = { 
-                name: "mail.received." + timestamp
-            };
-            return broker.call("v1.query.subscriptions", params, opts).then(res => {
-                expect(res).toBeDefined();
-                expect(res).toContainEqual(expect.objectContaining({
-                    processId: processes["P1"],
-                    elementId: events["S1"],
-                    ownerId: ownerId,
-                    type: Constants.DEFAULT_EVENT
-                }));
-            });
-        });
-   
-        it("it should add a core process", () => {
-            let params = { 
-                name: "my core process"
-            };
-            opts.meta.acl.core = true;
-            return broker.call("v1.control.addProcess", params, opts).then(res => {
-                expect(res).toBeDefined();
-                expect(res).toContainEqual(expect.objectContaining({
-                    id: expect.any(String)
-                }));
-                processes["PC1"] = res[0].id;
-            });
-            
-        });
-        
-        it("it should add a core event subscription", async () => {
-            let params = { 
-                processId: processes["PC1"],
-                name: "mail.received." + timestamp,
-                position: Constants.START_EVENT,
-                type: Constants.DEFAULT_EVENT,
-                direction: Constants.CATCHING_EVENT
-            };
-            return broker.call("v1.control.addEvent", params, opts).then(res => {
-                expect(res).toBeDefined();
-                expect(res).toContainEqual(expect.objectContaining({
-                    id: expect.any(String)
-                }));
-                events["SC1"] = res[0].id;
-            });
-        });
-   
-        it("it should get subscriptions including core subscription", async () => {
-            let params = { 
-                name: "mail.received." + timestamp
-            };
-            return broker.call("v1.query.subscriptions", params, opts).then(res => {
-                expect(res).toBeDefined();
-                expect(res.length).toEqual(2);
-                expect(res).toContainEqual(expect.objectContaining({
-                    processId: processes["P1"],
-                    elementId: events["S1"],
-                    ownerId: ownerId,
-                    type: Constants.DEFAULT_EVENT
-                }));
-                expect(res).toContainEqual(expect.objectContaining({
-                    processId: processes["PC1"],
-                    elementId: events["SC1"],
-                    ownerId: ownerId,
-                    type: Constants.DEFAULT_EVENT
-                }));
-            });
-        });
-   
-        it("it should add a task", async () => {
-            let params = { 
-                processId: processes["P1"],
-                name: "my first task in the process",
-                attributes: {
-                    service: "test",
-                    action: "action"
-                }
-            };
-            return broker.call("v1.control.addTask", params, opts).then(res => {
-                expect(res).toBeDefined();
-                expect(res).toContainEqual(expect.objectContaining({
-                    id: expect.any(String)
-                }));
-                tasks["T1"] = res[0].id;
-            });
-        });
-   
-        it("it should get the task", async () => {
-            let params = { 
-                processId: processes["P1"],
-                elementId: tasks["T1"]
-            };
-            return broker.call("v1.query.getTask", params, opts).then(res => {
-                expect(res).toBeDefined();
-                expect(res).toContainEqual(expect.objectContaining({
-                    processId: processes["P1"],
-                    uid: tasks["T1"],
-                    ownerId: ownerId,
-                    type: Constants.SERVICE_TASK,
-                    name: "my first task in the process",
-                    attributes: {
-                        service: "test",
-                        action: "action"
-                    }
-                }));
-            });
-        });
-   
-        it("it should add a gateway", async () => {
-            let params = { 
-                processId: processes["P1"],
-                name: "first gateway",
-                type: Constants.EXCLUSIVE_GATEWAY
-            };
-            return broker.call("v1.control.addGateway", params, opts).then(res => {
-                expect(res).toBeDefined();
-                expect(res).toContainEqual(expect.objectContaining({
-                    id: expect.any(String)
-                }));
-                gateways["G1"] = res[0].id;
-            });
-        });
-       
-        it("it should get the gateway", async () => {
-            let params = { 
-                processId: processes["P1"],
-                elementId: gateways["G1"]
-            };
-            return broker.call("v1.query.getGateway", params, opts).then(res => {
-                expect(res).toBeDefined();
-                expect(res).toContainEqual(expect.objectContaining({
-                    processId: processes["P1"],
-                    uid: gateways["G1"],
-                    ownerId: ownerId,
-                    type: Constants.EXCLUSIVE_GATEWAY,
-                    name: "first gateway"
-                }));
-            });
-        });
-   
-        it("it should add a sequence flow from gateway to task", async () => {
-            let params = { 
-                processId: processes["P1"],
-                from: gateways["G1"],
-                to: tasks["T1"]
-            };
-            return broker.call("v1.control.addSequence", params, opts).then(res => {
-                expect(res).toBeDefined();
-                expect(res).toContainEqual(expect.objectContaining({
-                    connection: {
-                        from: gateways["G1"],
-                        to: tasks["T1"],
-                        type: Constants.SEQUENCE_STANDARD,
-                        uid: expect.any(String)
-                    }
-                }));
-                sequences["S1"] = res[0].connection.uid;
-            });
-        });
-       
-        it("it should get the sequence", async () => {
-            let params = { 
-                processId: processes["P1"],
-                elementId: sequences["S1"]
-            };
-            return broker.call("v1.query.getSequence", params, opts).then(res => {
-                expect(res).toBeDefined();
-                expect(res).toContainEqual(expect.objectContaining({
-                    processId: processes["P1"],
-                    uid: sequences["S1"],
-                    ownerId: ownerId,
-                    from: gateways["G1"],
-                    to: tasks["T1"],
-                    type: Constants.SEQUENCE_STANDARD
-                }));
-            });
-        });
-   
+
         it("it should get elements of the process", async () => {
             let params = { 
-                processId: processes["P1"]
+                processId: process.processId,
+                versionId: process.versionId
             };
             return broker.call("v1.query.getElements", params, opts).then(res => {
                 expect(res).toBeDefined();
+                // console.log(util.inspect(res, {showHidden: false, depth: null}));
                 expect(res).toContainEqual(expect.objectContaining({
-                    processId: processes["P1"],
-                    uid: events["S1"],
+                    processId: process.processId,
+                    uid: expect.any(String),
                     type: Constants.DEFAULT_EVENT,
                     ownerId: ownerId
                 }));
                 expect(res).toContainEqual(expect.objectContaining({
-                    processId: processes["P1"],
-                    uid: tasks["T1"],
+                    processId: process.processId,
+                    uid: expect.any(String),
+                    type: Constants.SIGNAL_EVENT,
+                    ownerId: ownerId
+                }));
+                expect(res).toContainEqual(expect.objectContaining({
+                    processId: process.processId,
+                    uid: expect.any(String),
+                    type: Constants.SEQUENCE_STANDARD,
+                    ownerId: ownerId
+                }));
+                expect(res).toContainEqual(expect.objectContaining({
+                    processId: process.processId,
+                    uid: expect.any(String),
                     type: Constants.SERVICE_TASK,
                     ownerId: ownerId
                 }));
                 expect(res).toContainEqual(expect.objectContaining({
-                    processId: processes["P1"],
-                    uid: gateways["G1"],
-                    type: Constants.EXCLUSIVE_GATEWAY,
-                    ownerId: ownerId
-                }));
-                expect(res).toContainEqual(expect.objectContaining({
-                    processId: processes["P1"],
-                    uid: sequences["S1"],
-                    type: Constants.SEQUENCE_STANDARD,
+                    processId: process.processId,
+                    uid: expect.any(String),
+                    type: Constants.BUSINESS_RULE_TASK,
                     ownerId: ownerId
                 }));
             });
         });
-   
+        
+        it("it should activate the version", async () => {
+            let params = { 
+                processId: process.processId,
+                versionId: process.versionId
+            };
+            return broker.call("v1.control.activateVersion", params, opts).then(res => {
+                expect(res).toBeDefined();
+                expect(res.processId).toEqual(process.processId);
+                expect(res.versionId).toEqual(process.versionId);
+                expect(res.name).toEqual("UserRequestResetPassword.bpmn");
+            });
+        });
+        
+        it("it should list the existing versions", async () => {
+            let params = { 
+                processId: process.processId
+            };
+            return broker.call("v1.control.getVersions", params, opts).then(res => {
+                expect(res).toBeDefined();
+                expect(res.length).toEqual(1);
+                expect(res).toContainEqual(expect.objectContaining({
+                    processId: process.processId,
+                    versionId: process.versionId,
+                    name: "UserRequestResetPassword.bpmn"
+                }));
+            });
+        });
+
+        it("it should deploy a second process", async () => {
+            load(ownerId,"UserRequestResetPassword.bpmn","assets/UserRequestResetPassword.bpmn");
+            let params = {
+                name: "UserRequestResetPassword.bpmn"
+            };
+            return broker.call("v1.control.deployProcess", params, opts).then(res => {
+                expect(res).toBeDefined();
+                // console.log(util.inspect(res, {showHidden: false, depth: null}));
+                expect(res).toEqual({
+                    processId: expect.any(String),
+                    versionId: expect.any(String)
+                });
+                secondProcess = res;
+            });
+                
+        });
+
+        it("it should list the existing processes", async () => {
+            let params = { 
+            };
+            return broker.call("v1.control.getProcesses", params, opts).then(res => {
+                expect(res).toBeDefined();
+                expect(res.length).toEqual(2);
+                expect(res).toContainEqual(expect.objectContaining({
+                    processId: process.processId,
+                    versionId: process.versionId,
+                    name: "UserRequestResetPassword.bpmn"
+                }));
+                expect(res).toContainEqual(expect.objectContaining({
+                    processId: secondProcess.processId,
+                    versionId: null,
+                    name: "UserRequestResetPassword.bpmn"
+                }));
+            });
+        });
+
+        it("it should deploy a second version", async () => {
+            load(ownerId,"UserRequestResetPassword.bpmn","assets/UserRequestResetPassword.bpmn");
+            let params = {
+                processId: process.processId,
+                name: "UserRequestResetPassword.bpmn"
+            };
+            return broker.call("v1.control.deployProcess", params, opts).then(res => {
+                expect(res).toBeDefined();
+                // console.log(util.inspect(res, {showHidden: false, depth: null}));
+                expect(res).toEqual({
+                    processId: process.processId,
+                    versionId: expect.any(String)
+                });
+                secondVersion = res;
+            });
+                
+        });
+
+        it("it should list the existing versions", async () => {
+            let params = { 
+                processId: process.processId
+            };
+            return broker.call("v1.control.getVersions", params, opts).then(res => {
+                expect(res).toBeDefined();
+                expect(res.length).toEqual(2);
+                expect(res).toContainEqual(expect.objectContaining({
+                    processId: process.processId,
+                    versionId: process.versionId,
+                    name: "UserRequestResetPassword.bpmn"
+                }));
+                expect(res).toContainEqual(expect.objectContaining({
+                    processId: process.processId,
+                    versionId: secondVersion.versionId,
+                    name: "UserRequestResetPassword.bpmn"
+                }));
+            });
+        });
+        
+        it("it should get subscriptions", async () => {
+            let params = {
+                eventName: "users.password.reset.requested",
+            };
+            return broker.call("v1.query.subscriptions", params, opts).then(res => {
+                expect(res).toBeDefined();
+                // console.log(res);
+                expect(res.length).toEqual(1);
+                expect(res).toContainEqual(expect.objectContaining({
+                    processId: process.processId,
+                    elementId: expect.any(String),
+                    type: Constants.SIGNAL_EVENT,
+                    ownerId: ownerId,
+                    attributes: {
+                        event: "users.password.reset.requested",
+                        contextKey: "user"
+                    }   
+                }));
+                element = res[0];
+            });
+        });
+
+        it("it should get event element", async () => {
+            let params = {
+                processId: element.processId,
+                elementId: element.elementId
+            };
+            return broker.call("v1.query.getEvent", params, opts).then(res => {
+                expect(res).toBeDefined();
+                // console.log(res);
+                expect(res.length).toEqual(1);
+                expect(res).toContainEqual(expect.objectContaining({
+                    processId: process.processId,
+                    versionId: process.versionId,
+                    name: "users.password.reset.requested",
+                    uid: element.elementId,
+                    position: Constants.START_EVENT,
+                    type: Constants.SIGNAL_EVENT,
+                    direction: Constants.CATCHING_EVENT,
+                    ownerId: ownerId,
+                    attributes: {
+                        event: "users.password.reset.requested",
+                        contextKey: "user"
+                    }   
+                }));
+                element = res[0];
+            });
+        });
+        
+        it("it should get sequence from event to first task", async () => {
+            let params = {
+                processId: element.processId,
+                elementId: element.uid
+            };
+            return broker.call("v1.query.next", params, opts).then(res => {
+                expect(res).toBeDefined();
+                // console.log(res);
+                expect(res.length).toEqual(1);
+                expect(res).toContainEqual(expect.objectContaining({
+                    processId: process.processId,
+                    ownerId: ownerId,
+                    uid: expect.any(String),
+                    type: Constants.SEQUENCE_STANDARD
+                }));
+                element = res[0];
+            });
+        });
+        
+        it("it should get sequence element", async () => {
+            let params = {
+                processId: element.processId,
+                elementId: element.uid
+            };
+            return broker.call("v1.query.getSequence", params, opts).then(res => {
+                expect(res).toBeDefined();
+                // console.log(res);
+                expect(res.length).toEqual(1);
+                expect(res).toContainEqual(expect.objectContaining({
+                    processId: process.processId,
+                    uid: element.uid,
+                    from: expect.any(String),
+                    to: expect.any(String),
+                    type: Constants.SEQUENCE_STANDARD,
+                    ownerId: ownerId,
+                    attributes: expect.any(Object)  
+                }));
+            });
+        });
+        
+        it("it should get first task", async () => {
+            let params = {
+                processId: element.processId,
+                elementId: element.uid
+            };
+            return broker.call("v1.query.next", params, opts).then(res => {
+                expect(res).toBeDefined();
+                // console.log(res);
+                expect(res.length).toEqual(1);
+                expect(res).toContainEqual(expect.objectContaining({
+                    processId: process.processId,
+                    ownerId: ownerId,
+                    uid: expect.any(String),
+                    type: Constants.BUSINESS_RULE_TASK
+                }));
+                element = res[0];
+            });
+        });
+        
+        it("it should get details of first task", async () => {
+            let params = {
+                processId: element.processId,
+                elementId: element.uid
+            };
+            return broker.call("v1.query.getTask", params, opts).then(res => {
+                expect(res).toBeDefined();
+                // console.log(res);
+                expect(res.length).toEqual(1);
+                expect(res).toContainEqual(expect.objectContaining({
+                    processId: process.processId,
+                    versionId: process.versionId,
+                    uid: element.uid,
+                    name: "parameters for rendering html",
+                    type: Constants.BUSINESS_RULE_TASK,
+                    ownerId: ownerId,
+                    attributes: {
+                        ruleset: "parameters.render.body",
+                        contextKeys: ["user"],
+                        contextKey: "parameters.render.body"
+                    }   
+                }));
+            });
+        });
+        
     });
     
     describe("Test stop broker", () => {

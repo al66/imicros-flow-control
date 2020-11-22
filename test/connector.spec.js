@@ -88,6 +88,13 @@ describe("Test connector", () => {
             expect(res).toEqual([]);
         });
    
+        it("it should clean up", async () => {
+            let statement = "MATCH (s:Service) WHERE s.name =~ 'flow.connector.*' DETACH DELETE s;";
+            let res = await connector.run(statement, {});
+            expect(res).toBeDefined();
+            expect(res).toEqual([]);
+        });
+
     });
     
     describe("Test control", () => {
@@ -102,14 +109,118 @@ describe("Test connector", () => {
             let res = await connector.addProcess(process);
             expect(res).toBeDefined();
             expect(res).toContainEqual(expect.objectContaining({
-                id: expect.any(String)
+                id: expect.any(String),
+                versionId: null
             }));
-            processes["P1"] = res[0].id;
+            processes["P1"] = res[0];
+        });
+
+        it("it should add a version", async () => {
+            let version = { 
+                uid: uuid(),
+                processId: processes["P1"].id,
+                name: "my first version",
+                ownerId: `group1-${timestamp}`,
+                attributes: {
+                    deployed: Date.now()
+                }
+            };
+            let res = await connector.addVersion(version);
+            expect(res).toBeDefined();
+            expect(res).toContainEqual(expect.objectContaining({
+                id: expect.any(String),
+                name: version.name
+            }));
+            processes["P1"].version = res[0].id;
         });
    
+        it("it should add a second version", async () => {
+            let version = { 
+                uid: uuid(),
+                processId: processes["P1"].id,
+                name: "my second version",
+                ownerId: `group1-${timestamp}`,
+                attributes: {
+                    deployed: Date.now()
+                }
+            };
+            let res = await connector.addVersion(version);
+            expect(res).toBeDefined();
+            expect(res).toContainEqual(expect.objectContaining({
+                id: expect.any(String),
+                name: version.name
+            }));
+            processes["P1"].secondVersion = res[0].id;
+        });
+        
+        it("it should get versions", async () => {
+            let process = { 
+                id: processes["P1"].id,
+                ownerId: `group1-${timestamp}`
+            };
+            let res = await connector.getVersions(process);
+            expect(res).toBeDefined();
+            expect(res).toContainEqual(expect.objectContaining({
+                processId: processes["P1"].id,
+                versionId: processes["P1"].version,
+                name: "my first version"
+            }));
+            expect(res).toContainEqual(expect.objectContaining({
+                processId: processes["P1"].id,
+                versionId: processes["P1"].secondVersion,
+                name: "my second version"
+            }));
+        });
+        
+        it("it should get a process list", async () => {
+            let filter = { 
+                ownerId: `group1-${timestamp}`
+            };
+            let res = await connector.getProcesses(filter);
+            expect(res).toBeDefined();
+            expect(res).toContainEqual(expect.objectContaining({
+                processId: processes["P1"].id,
+                name: "my first process",
+                versionId: null,
+                versionName: null
+            }));
+            expect(res.length).toEqual(1);
+        });
+        
+        it("it should activate the first version", async () => {
+            let version = { 
+                id: processes["P1"].version,
+                processId: processes["P1"].id,
+                ownerId: `group1-${timestamp}`
+            };
+            let res = await connector.activateVersion(version);
+            expect(res).toBeDefined();
+            expect(res).toContainEqual(expect.objectContaining({
+                processId: processes["P1"].id,
+                versionId: processes["P1"].version,
+                name: "my first version"
+            }));
+        });
+        
+        it("it should get a process list", async () => {
+            let filter = { 
+                ownerId: `group1-${timestamp}`
+            };
+            let res = await connector.getProcesses(filter);
+            expect(res).toBeDefined();
+            expect(res).toContainEqual(expect.objectContaining({
+                processId: processes["P1"].id,
+                name: "my first process",
+                versionId: processes["P1"].version,
+                versionName: "my first version"
+            }));
+            expect(res.length).toEqual(1);
+        });
+        
         it("it should add an event", async () => {
             let event = {
-                processId: processes["P1"],
+                processId: processes["P1"].id,
+                versionId: processes["P1"].version,
                 name: "mail.received",
                 position: Constants.START_EVENT,
                 type: Constants.DEFAULT_EVENT,
@@ -124,16 +235,33 @@ describe("Test connector", () => {
             events["S1"] = res[0].id;
         });
    
+        it("it should add an event to second version", async () => {
+            let event = {
+                processId: processes["P1"].id,
+                versionId: processes["P1"].secondVersion,
+                name: "mail.received",
+                position: Constants.START_EVENT,
+                type: Constants.DEFAULT_EVENT,
+                direction: Constants.CATCHING_EVENT,
+                ownerId: `group1-${timestamp}`
+            };
+            let res = await connector.addEvent(event);
+            expect(res).toBeDefined();
+            expect(res).toContainEqual(expect.objectContaining({
+                id: expect.any(String)
+            }));
+        });
+   
         it("it should get element event ", async () => {
             let element = {
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 elementId: events["S1"],
                 ownerId: `group1-${timestamp}`
             };
             let res = await connector.getEvent(element);
             expect(res).toBeDefined();
             expect(res[0]).toMatchObject({
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 name: "mail.received",
                 position: Constants.START_EVENT,
                 type: Constants.DEFAULT_EVENT,
@@ -145,7 +273,8 @@ describe("Test connector", () => {
         
         it("it should add a task", async () => {
             let task = {
-                processId: processes["P1"],
+                processId: processes["P1"].id,
+                versionId: processes["P1"].version,
                 name: "my first task in the process",
                 ownerId: `group1-${timestamp}`,
                 attributes: {
@@ -167,7 +296,7 @@ describe("Test connector", () => {
    
         it("it should get element task ", async () => {
             let task = {
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 name: "my first task in the process",
                 ownerId: `group1-${timestamp}`,
                 attributes: {
@@ -180,7 +309,7 @@ describe("Test connector", () => {
                 }
             };
             let element = {
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 elementId: tasks["T1"],
                 ownerId: `group1-${timestamp}`
             };
@@ -198,7 +327,8 @@ describe("Test connector", () => {
         
         it("it should add a second task", async () => {
             let task = {
-                processId: processes["P1"],
+                processId: processes["P1"].id,
+                versionId: processes["P1"].version,
                 name: "my second task in the process",
                 ownerId: `group1-${timestamp}`
             };
@@ -212,7 +342,8 @@ describe("Test connector", () => {
    
         it("it should add a third task", async () => {
             let task = {
-                processId: processes["P1"],
+                processId: processes["P1"].id,
+                versionId: processes["P1"].version,
                 name: "my third task in the process",
                 ownerId: `group1-${timestamp}`
             };
@@ -226,7 +357,8 @@ describe("Test connector", () => {
    
         it("it should add a gateway", async () => {
             let gateway = {
-                processId: processes["P1"],
+                processId: processes["P1"].id,
+                versionId: processes["P1"].version,
                 type: Constants.EXCLUSIVE_GATEWAY,
                 ownerId: `group1-${timestamp}`,
                 attributes: {
@@ -244,14 +376,14 @@ describe("Test connector", () => {
 
         it("it should get element gateway ", async () => {
             let element = {
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 elementId: gateways["G1"],
                 ownerId: `group1-${timestamp}`
             };
             let res = await connector.getGateway(element);
             expect(res).toBeDefined();
             expect(res[0]).toMatchObject({
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 type: Constants.EXCLUSIVE_GATEWAY,
                 uid: gateways["G1"],
                 ownerId: `group1-${timestamp}`,
@@ -279,19 +411,18 @@ describe("Test connector", () => {
                 }
             }));
             sequences.push(res[0].connection);
-            console.log(sequences[0]);
         });
    
         it("it should get element sequence ", async () => {
             let element = {
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 elementId: sequences[0].uid,
                 ownerId: `group1-${timestamp}`
             };
             let res = await connector.getSequence(element);
             expect(res).toBeDefined();
             expect(res[0]).toMatchObject({
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 from: sequences[0].from,
                 to: sequences[0].to,
                 type: sequences[0].type,
@@ -367,14 +498,14 @@ describe("Test connector", () => {
    
         it("it should get sequence from event to gateway ", async () => {
             let element = {
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 elementId: events["S1"],
                 ownerId: `group1-${timestamp}`
             };
             let res = await connector.getNext(element);
             expect(res).toBeDefined();
             expect(res[0]).toMatchObject({
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 uid: sequences[0].uid,
                 type: sequences[0].type,
                 ownerId: `group1-${timestamp}`
@@ -383,65 +514,98 @@ describe("Test connector", () => {
    
         it("it should get gateway ", async () => {
             let element = {
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 elementId: sequences[0].uid,
                 ownerId: `group1-${timestamp}`
             };
             let res = await connector.getNext(element);
             expect(res).toBeDefined();
             expect(res[0]).toMatchObject({
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 uid: gateways["G1"],
                 type: Constants.EXCLUSIVE_GATEWAY,
                 ownerId: `group1-${timestamp}`
             });
         });        
         
+        it("it should get previous sequence to gateway", async () => {
+            let element = {
+                processId: processes["P1"].id,
+                elementId: gateways["G1"],
+                ownerId: `group1-${timestamp}`
+            };
+            let res = await connector.getPrevious(element);
+            expect(res).toBeDefined();
+            expect(res[0]).toMatchObject({
+                processId: processes["P1"].id,
+                uid: sequences[0].uid,
+                type: sequences[0].type,
+                ownerId: `group1-${timestamp}`
+            });
+        });        
+        
+        it("it should get previous element event", async () => {
+            let element = {
+                processId: processes["P1"].id,
+                elementId: sequences[0].uid,
+                ownerId: `group1-${timestamp}`
+            };
+            let res = await connector.getPrevious(element);
+            expect(res).toBeDefined();
+            expect(res[0]).toMatchObject({
+                processId: processes["P1"].id,
+                uid: events["S1"],
+                type: Constants.DEFAULT_EVENT,
+                ownerId: `group1-${timestamp}`
+            });
+        });        
+        
         it("it should get all elements of the process ", async () => {
             let process = {
-                processId: processes["P1"],
+                processId: processes["P1"].id,
+                versionId: processes["P1"].version,
                 ownerId: `group1-${timestamp}`
             };
             let res = await connector.getElements(process);
             expect(res).toBeDefined();
             expect(res).toContainEqual(expect.objectContaining({
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 uid: gateways["G1"],
                 type: Constants.EXCLUSIVE_GATEWAY,
                 ownerId: `group1-${timestamp}`
             }));
             expect(res).toContainEqual(expect.objectContaining({
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 uid: sequences[0].uid,
                 type: sequences[0].type,
                 ownerId: `group1-${timestamp}`
             }));
             expect(res).toContainEqual(expect.objectContaining({
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 uid: sequences[1].uid,
                 type: sequences[1].type,
                 ownerId: `group1-${timestamp}`
             }));
             expect(res).toContainEqual(expect.objectContaining({
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 uid: events["S1"],
                 type: Constants.DEFAULT_EVENT,
                 ownerId: `group1-${timestamp}`
             }));
             expect(res).toContainEqual(expect.objectContaining({
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 uid: tasks["T1"],
                 type: expect.any(String),
                 ownerId: `group1-${timestamp}`
             }));
             expect(res).toContainEqual(expect.objectContaining({
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 uid: tasks["T2"],
                 type: expect.any(String),
                 ownerId: `group1-${timestamp}`
             }));
             expect(res).toContainEqual(expect.objectContaining({
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 uid: tasks["T3"],
                 type: expect.any(String),
                 ownerId: `group1-${timestamp}`
@@ -450,7 +614,8 @@ describe("Test connector", () => {
 
         it("it should add an second event", async () => {
             let event = {
-                processId: processes["P1"],
+                processId: processes["P1"].id,
+                versionId: processes["P1"].version,
                 name: "user.found",
                 position: Constants.INTERMEDIATE_EVENT,
                 type: Constants.DEFAULT_EVENT,
@@ -465,7 +630,6 @@ describe("Test connector", () => {
             events["S2"] = res[0].id;
         });
    
-        
         it("it should get first event as subscription", async () => {
             let event = {
                 name: "mail.received",
@@ -474,11 +638,12 @@ describe("Test connector", () => {
             let res = await connector.getSubscriptions(event);
             expect(res).toBeDefined();
             expect(res).toContainEqual(expect.objectContaining({
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 elementId: events["S1"],
                 type: expect.any(String),
                 ownerId: `group1-${timestamp}`
             }));
+            expect(res.length).toEqual(1);
         });
    
         it("it should get second event as subscription", async () => {
@@ -489,37 +654,35 @@ describe("Test connector", () => {
             let res = await connector.getSubscriptions(event);
             expect(res).toBeDefined();
             expect(res).toContainEqual(expect.objectContaining({
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 elementId: events["S2"],
                 type: expect.any(String),
                 ownerId: `group1-${timestamp}`
             }));
+            expect(res.length).toEqual(1);
         });
    
         it("it should return sequence", async () => {
             let element = {
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 elementId: events["S1"],
                 ownerId: `group1-${timestamp}`
             };
             let res = await connector.getNext(element);
             expect(res).toBeDefined();
             expect(res).toContainEqual(expect.objectContaining({
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 uid: sequences[0].uid,
                 type: expect.any(String),
                 ownerId: `group1-${timestamp}`
             }));
         });
-        /*
+
         it("it should delete sequence flow from event to gateway", async () => {
             let connection = {
                 fromId: events["S1"],
                 toId: gateways["G1"],
-                owner: {
-                    type: "group",
-                    id: `group1-${timestamp}`
-                }
+                ownerId: `group1-${timestamp}`
             };
             let res = await connector.removeSequence(connection);
             expect(res).toBeDefined();
@@ -528,12 +691,9 @@ describe("Test connector", () => {
 
         it("it should delete a gateway", async () => {
             let gateway = {
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 id: gateways["G1"],
-                owner: {
-                    type: "group",
-                    id: `group1-${timestamp}`
-                }
+                ownerId: `group1-${timestamp}`
             };
             let res = await connector.removeGateway(gateway);
             expect(res).toBeDefined();
@@ -542,12 +702,9 @@ describe("Test connector", () => {
    
         it("it should delete an event", async () => {
             let event = {
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 id: events["S1"],
-                owner: {
-                    type: "group",
-                    id: `group1-${timestamp}`
-                }
+                ownerId: `group1-${timestamp}`
             };
             let res = await connector.removeEvent(event);
             expect(res).toBeDefined();
@@ -556,12 +713,9 @@ describe("Test connector", () => {
    
         it("it should delete a task", async () => {
             let task = {
-                processId: processes["P1"],
+                processId: processes["P1"].id,
                 id: tasks["T1"],
-                owner: {
-                    type: "group",
-                    id: `group1-${timestamp}`
-                }
+                ownerId: `group1-${timestamp}`
             };
             let res = await connector.removeTask(task);
             expect(res).toBeDefined();
@@ -570,17 +724,15 @@ describe("Test connector", () => {
    
         it("it should remove the whole process", async () => {
             let process = {
-                id: processes["P1"],
-                owner: {
-                    type: "group",
-                    id: `group1-${timestamp}`
-                }
+                id: processes["P1"].id  ,
+                ownerId: `group1-${timestamp}`
             };
             let res = await connector.removeProcess(process);
             expect(res).toBeDefined();  
             expect(res).toEqual([]);
         });
         
+        /*
         */
         
     });
@@ -588,7 +740,6 @@ describe("Test connector", () => {
     describe("Test instance", () => {
         
         let instances = [];
-        
         
         it("it should create an instance", async () => {
             let instance = {
@@ -654,7 +805,7 @@ describe("Test connector", () => {
             let res = await connector.getInstances(selection);
             expect(res).toBeDefined();
             expect(res.length).toEqual(3);
-            console.log(res);
+            // console.log(res);
         });
         
         it("it should return the failed instance", async () => {
@@ -667,7 +818,7 @@ describe("Test connector", () => {
             expect(res).toBeDefined();
             expect(res.length).toEqual(1);
             expect(res).toContainEqual(expect.objectContaining(instances[0]));
-            console.log(res);
+            // console.log(res);
         });
         
         it("it should return the two running instances", async () => {
@@ -681,7 +832,7 @@ describe("Test connector", () => {
             expect(res.length).toEqual(2);
             expect(res).toContainEqual(expect.objectContaining(instances[1]));
             expect(res).toContainEqual(expect.objectContaining(instances[2]));
-            console.log(res);
+            // console.log(res);
         });
         
         it("it should delete an instance", async () => {

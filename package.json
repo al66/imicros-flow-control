@@ -1,17 +1,18 @@
 {
   "name": "imicros-flow-control",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Moleculer services for process definition and control of imicros-flow",
   "main": "index.js",
   "directories": {
     "lib": "lib"
   },
   "scripts": {
-    "test": "jest --coverage --no-cache",
-    "test-local": "jest --coverage --no-cache --config=local.js",
-    "test-conn": "jest ./test/flow.connector.control.spec.js --no-cache --config=local.js",
+    "test": "jest --coverage --no-cache --silent",
+    "test-local": "jest --coverage --no-cache --config=local.js --silent",
+    "test-conn": "jest ./test/connector.spec.js --no-cache --config=local.js",
     "test-control": "jest ./test/flow.control.spec.js --no-cache --config=local.js",
-    "test-instance": "jest ./test/flow.instance.spec.js --no-cache --config=local.js"
+    "test-instance": "jest ./test/flow.instance.spec.js --no-cache --config=local.js",
+    "test-process": "jest ./test/process.spec.js --no-cache --config=local.js"
   },
   "jest": {
     "collectCoverageFrom": [
@@ -48,12 +49,13 @@
   },
   "homepage": "https://github.com/al66/imicros-flow-control#readme",
   "devDependencies": {
-    "jest": "^25.5.4",
-    "moleculer": "^0.14.6",
-    "uuid": "^8.0.0"
+    "jest": "^26.6.3",
+    "moleculer": "^0.14.11",
+    "uuid": "^8.3.1"
   },
   "dependencies": {
-    "lodash": "^4.17.15",
-    "neo4j-driver": "^4.0.2"
+    "fast-xml-parser": "^3.17.4",
+    "lodash": "^4.17.20",
+    "neo4j-driver": "^4.2.1"
   }
 }

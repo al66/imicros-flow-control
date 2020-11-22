@@ -2,7 +2,7 @@
 [![Build Status](https://travis-ci.org/al66/imicros-flow-control.svg?branch=master)](https://travis-ci.org/al66/imicros-flow-control)
 [![Coverage Status](https://coveralls.io/repos/github/al66/imicros-flow-control/badge.svg?branch=master)](https://coveralls.io/github/al66/imicros-flow-control?branch=master)
 
-[Moleculer](https://github.com/moleculerjs/moleculer) services for process definition and control of imicros-flow
+[Moleculer](https://github.com/moleculerjs/moleculer) services for process definitions and control of imicros-flow
 
 
 ## Installation
@@ -33,11 +33,10 @@ broker.createService(Controller, Object.assign({
 broker.start();
 ```
 ## Actions
-- addProcess { id (optional), name } => { id }  
-- addEvent { processId, id (optional), name, position (optional), type (optional), direction (optional), interaction (optional) } => { id }  
-- addTask { processId, id (optional), name, type (optional), attributes (optional) } => { id }  
-- addGateway { processId, id (optional), type (optional) } => { id }  
-- addSequence { processId, from, to, type (optional), attributes (optional) } => { id }  
+- deployProcess { processId(optional), name } => { processId, versionId }   name - name of object in object store. The object must be a valid bpmn xml file 
+- activateVersion { processId, versionId } => { processId, versionId }  
+- getProcesses { } => [{ processId, versionId, name }]  
+- getVersions { processId } => [{ processId, versionId, name }]  
 
 # Usage Query Service
 ```js
@@ -60,6 +59,11 @@ broker.createService(Query, Object.assign({
 broker.start();
 ```
 ## Actions
-- next { processId, elementId } => [{ processId, elementId, type, name (optional), position (optional), direction (optional), interaction (optional), from (optional), to (optional), attributes (optional) }]  
-- get { processId, elementId } => { processId, elementId, type, name (optional), position (optional), direction (optional), interaction (optional), from (optional), to (optional), attributes (optional) }
-- getAll { processId } => [{ processId, elementId, type, name (optional), position (optional), direction (optional), interaction (optional), from (optional), to (optional), attributes (optional) }]
+- next { processId, elementId } => [{ processId, ownerId, uid, type }]  
+- previous { processId, elementId } => [{ processId, ownerId, uid, type }]
+- subscriptions { eventName } => [{ processId, elementId, ownerId, type, attributes }]
+- getEvent { processId, elementId } => [{ processId, versionId, type, name, uid, ownerId, position, direction, interaction, from, to, attributes }]
+- getSequence { processId, elementId } => [{ processId, versionId, type, uid, ownerId, from, to, attributes }]
+- getTask { processId, elementId } => [{ processId, versionId, type, name, uid, ownerId, attributes }]
+- getGateway { processId, elementId } => [{ processId, versionId, type, name, uid, ownerId, attributes }]
+- getElements { processId, versionId } => [{ processId, elementId, type, uid, ownerId }]
