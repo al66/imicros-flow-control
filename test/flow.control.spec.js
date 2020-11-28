@@ -237,8 +237,8 @@ describe("Test controller service", () => {
             };
             return broker.call("v1.query.subscriptions", params, opts).then(res => {
                 expect(res).toBeDefined();
-                // console.log(res);
-                expect(res.length).toEqual(1);
+                console.log(res);
+                expect(res.length).toBeGreaterThanOrEqual(1);
                 expect(res).toContainEqual(expect.objectContaining({
                     processId: process.processId,
                     elementId: expect.any(String),
@@ -249,7 +249,7 @@ describe("Test controller service", () => {
                         contextKey: "user"
                     }   
                 }));
-                element = res[0];
+                element = res.find(e => { return e.processId === process.processId; });
             });
         });
 
