@@ -122,6 +122,7 @@ describe("Test controller service", () => {
                 failed: true
             };
             let res = await broker.call("v1.instance.getRunning", params, opts);
+            console.log(res);
             expect(res).toBeDefined();
             expect(res.length).toEqual(3);
         });
