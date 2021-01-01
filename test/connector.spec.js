@@ -800,7 +800,10 @@ describe("Test connector", () => {
         it("it should return all instances", async () => {
             let selection = {
                 processId: instances[0].processId,
-                ownerId: instances[0].ownerId
+                ownerId: instances[0].ownerId,
+                running: true,
+                failed: true,
+                completed: true
             };
             let res = await connector.getInstances(selection);
             expect(res).toBeDefined();
