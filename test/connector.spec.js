@@ -721,7 +721,22 @@ describe("Test connector", () => {
             expect(res).toBeDefined();
             expect(res).toEqual([]);
         });
-   
+
+        it("it should deactivate the first version", async () => {
+            let version = { 
+                id: processes["P1"].version,
+                processId: processes["P1"].id,
+                ownerId: `group1-${timestamp}`
+            };
+            let res = await connector.deactivateVersion(version);
+            expect(res).toBeDefined();
+            expect(res).toContainEqual(expect.objectContaining({
+                processId: processes["P1"].id,
+                name: "my first version"
+            }));
+        });
+        
+        
         it("it should remove the whole process", async () => {
             let process = {
                 id: processes["P1"].id  ,
@@ -731,6 +746,7 @@ describe("Test connector", () => {
             expect(res).toBeDefined();  
             expect(res).toEqual([]);
         });
+        
         
         /*
         */

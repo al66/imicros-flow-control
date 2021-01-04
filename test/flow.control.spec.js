@@ -363,6 +363,18 @@ describe("Test controller service", () => {
                 }));
             });
         });
+
+        it("it should deactivate the version", async () => {
+            let params = { 
+                processId: process.processId,
+                versionId: process.versionId
+            };
+            return broker.call("v1.control.deactivateVersion", params, opts).then(res => {
+                expect(res).toBeDefined();
+                expect(res.processId).toEqual(process.processId);
+                expect(res.name).toEqual("UserRequestResetPassword.bpmn");
+            });
+        });
         
     });
     
