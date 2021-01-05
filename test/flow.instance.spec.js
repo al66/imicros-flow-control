@@ -76,6 +76,7 @@ describe("Test controller service", () => {
             let instance = {
                 ownerId: ownerId,
                 processId: uuidv4(),
+                versionId: uuidv4(),
                 instanceId: uuidv4()
             };
             await broker.emit("flow.instance.created", instance);
@@ -86,6 +87,7 @@ describe("Test controller service", () => {
         it("it should update an instance", async () => {
             let params = {
                 processId: instances[0].processId,
+                versionId: instances[0].versionId,
                 instanceId: instances[0].instanceId,
                 failed: true
             };
@@ -97,7 +99,8 @@ describe("Test controller service", () => {
         
         it("it should create a second instance", async () => {
             let params = {
-                processId: instances[0].processId
+                processId: instances[0].processId,
+                versionId: instances[0].versionId
             };
             let res = await broker.call("v1.instance.create", params, opts);
             expect(res).toBeDefined();
@@ -107,7 +110,8 @@ describe("Test controller service", () => {
         
         it("it should create a third instance", async () => {
             let params = {
-                processId: instances[0].processId
+                processId: instances[0].processId,
+                versionId: instances[0].versionId
             };
             let res = await broker.call("v1.instance.create", params, opts);
             expect(res).toBeDefined();
@@ -155,6 +159,7 @@ describe("Test controller service", () => {
         it("it should update an instance", async () => {
             let params = {
                 processId: instances[0].processId,
+                versionId: instances[0].versionId,
                 instanceId: instances[0].instanceId,
                 failed: true
             };
@@ -167,6 +172,7 @@ describe("Test controller service", () => {
         it("it should delete an instance", async () => {
             let params = {
                 processId: instances[0].processId,
+                versionId: instances[0].versionId,
                 instanceId: instances[0].instanceId,
                 completed: true
             };
@@ -178,6 +184,7 @@ describe("Test controller service", () => {
         it("it should delete the second instance", async () => {
             let params = {
                 processId: instances[1].processId,
+                versionId: instances[1].versionId,
                 instanceId: instances[1].instanceId,
                 completed: true
             };
@@ -189,6 +196,7 @@ describe("Test controller service", () => {
         it("it should delete the third instance", async () => {
             let params = {
                 processId: instances[2].processId,
+                versionId: instances[2].versionId,
                 instanceId: instances[2].instanceId,
                 completed: true
             };

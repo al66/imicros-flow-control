@@ -760,6 +760,7 @@ describe("Test connector", () => {
         it("it should create an instance", async () => {
             let instance = {
                 processId: uuid(),
+                versionId: uuid(),
                 ownerId: ownerId,
                 instanceId: uuid(),
                 status: Constants.INSTANCE_RUNNING
@@ -774,6 +775,7 @@ describe("Test connector", () => {
         it("it should update an instance", async () => {
             let instance = {
                 processId: instances[0].processId,
+                versionId: instances[0].versionId,
                 ownerId: instances[0].ownerId,
                 instanceId: instances[0].instanceId,
                 status: Constants.INSTANCE_FAILED
@@ -788,6 +790,7 @@ describe("Test connector", () => {
         it("it should create a second instance", async () => {
             let instance = {
                 processId: instances[0].processId,
+                versionId: instances[0].versionId,
                 ownerId: ownerId,
                 instanceId: uuid(),
                 status: Constants.INSTANCE_RUNNING
@@ -802,6 +805,7 @@ describe("Test connector", () => {
         it("it should create a third instance", async () => {
             let instance = {
                 processId: instances[0].processId,
+                versionId: instances[0].versionId,
                 ownerId: ownerId,
                 instanceId: uuid(),
                 status: Constants.INSTANCE_RUNNING
