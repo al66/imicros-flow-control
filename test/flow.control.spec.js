@@ -4,16 +4,19 @@ const { ServiceBroker } = require("moleculer");
 const { Controller } = require("../index");
 const { Query } = require("../index");
 const Constants = require("../lib/util/constants");
-// const { v4: uuidv4 } = require("uuid");
-
-// const timestamp = Date.now();
 
 // helper & mocks
 const { Store, load } = require("./helper/store");
-const { ACL, meta, ownerId } = require("./helper/acl");
+const { meta } = require("./helper/acl");
+const { Agents } = require("./helper/agents");
+const { credentials } = require("./helper/credentials");
 
-// const util = require("util");
+// shortcut
+const ownerId = credentials.ownerId;
 
+// service authentifcation
+process.env.SERVICE_ID = credentials.serviceId;
+process.env.SERVICE_AUTH_TOKEN = credentials.authToken;
 
 describe("Test controller service", () => {
 
@@ -53,7 +56,7 @@ describe("Test controller service", () => {
                 }
             }));
             // Start additional services
-            [ACL].map(service => { return broker.createService(service); }); 
+            [Agents].map(service => { return broker.createService(service); }); 
             await broker.start();
             expect(service).toBeDefined();
             expect(queryService).toBeDefined();
@@ -66,9 +69,7 @@ describe("Test controller service", () => {
         let opts, process, secondProcess, secondVersion, element;
         
         beforeEach(() => {
-            opts = { 
-                meta: meta
-            };
+            opts = { meta };
         });
         
         it("it should deploy the process", async () => {

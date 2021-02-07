@@ -51,12 +51,12 @@
   "homepage": "https://github.com/al66/imicros-flow-control#readme",
   "devDependencies": {
     "jest": "^26.6.3",
-    "moleculer": "^0.14.11",
-    "uuid": "^8.3.1"
+    "moleculer": "^0.14.12",
+    "uuid": "^8.3.2"
   },
   "dependencies": {
-    "fast-xml-parser": "^3.17.4",
+    "fast-xml-parser": "^3.18.0",
     "lodash": "^4.17.20",
-    "neo4j-driver": "^4.2.1"
+    "neo4j-driver": "^4.2.2"
   }
 }
