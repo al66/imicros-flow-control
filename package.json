@@ -1,8 +1,9 @@
 {
   "name": "imicros-flow-control",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Moleculer services for process definition and control of imicros-flow",
   "main": "index.js",
+  "engines" : { "node" : ">=14.15" },
   "directories": {
     "lib": "lib"
   },
@@ -56,7 +57,7 @@
   },
   "dependencies": {
     "fast-xml-parser": "^3.18.0",
-    "lodash": "^4.17.20",
+    "lodash": "^4.17.21",
     "neo4j-driver": "^4.2.2"
   }
 }

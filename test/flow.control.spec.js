@@ -235,6 +235,7 @@ describe("Test controller service", () => {
         it("it should get subscriptions", async () => {
             let params = {
                 eventName: "users.password.reset.requested",
+                ownerId
             };
             return broker.call("v1.query.subscriptions", params, opts).then(res => {
                 expect(res).toBeDefined();
