@@ -1,5 +1,4 @@
 # imicros-flow-control
-[![Build Status](https://travis-ci.org/al66/imicros-flow-control.svg?branch=master)](https://travis-ci.org/al66/imicros-flow-control)
 [![Coverage Status](https://coveralls.io/repos/github/al66/imicros-flow-control/badge.svg?branch=master)](https://coveralls.io/github/al66/imicros-flow-control?branch=master)
 
 [Moleculer](https://github.com/moleculerjs/moleculer) services for process definitions and control of imicros-flow

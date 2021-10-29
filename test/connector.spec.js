@@ -32,9 +32,9 @@ describe("Test connector", () => {
         
         it("it should initialize the connector and connect to database", async () => {
             let options = {
-                uri: process.env.URI,
-                user: "neo4j",
-                password: "neo4j"
+                uri: process.env.NEO4J_URI,
+                user: process.env.NEO4J_USER,
+                password: process.env.NEO4J_PASSWORD
             };
             connector = new Connector(broker, options);
             connector.connect();
@@ -51,7 +51,7 @@ describe("Test connector", () => {
             let params = {
                 name: "flow.connector"
             };
-            let statement = "MERGE (s:Service { name: {name}}) RETURN s.name AS name";
+            let statement = "MERGE (s:Service { name: $name }) RETURN s.name AS name";
             let res = await connector.run(statement, params);
             expect(res).toBeDefined();
             expect(res).toContainEqual(expect.objectContaining({
@@ -64,7 +64,7 @@ describe("Test connector", () => {
                 let params = {
                     name: "flow.connector_" + i
                 };
-                let statement = "MERGE (s:Service { name: {name}}) RETURN s.name AS name";
+                let statement = "MERGE (s:Service { name: $name }) RETURN s.name AS name";
                 let res = await connector.run(statement, params);
                 expect(res).toBeDefined();
                 expect(res).toContainEqual(expect.objectContaining({
@@ -82,7 +82,7 @@ describe("Test connector", () => {
                     name: "flow.connector_batch_" + i
                 });
             }
-            let statement = "UNWIND {batches} as batch MERGE (s:Service { name: batch.name})";
+            let statement = "UNWIND $batches as batch MERGE (s:Service { name: batch.name})";
             let res = await connector.run(statement, params);
             expect(res).toBeDefined();
             expect(res).toEqual([]);

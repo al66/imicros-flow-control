@@ -25,14 +25,7 @@ describe("Test controller service", () => {
                 logLevel: "info" //"debug"
             });
             service = await broker.createService(Instance, Object.assign({ 
-                name: "v1.instance",
-                settings: {
-                    db: {
-                        uri: process.env.URI,
-                        user: "neo4j",
-                        password: "neo4j"
-                    }
-                }
+                name: "v1.instance"
             }));
             await broker.start();
             expect(service).toBeDefined();

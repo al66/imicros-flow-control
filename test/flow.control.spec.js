@@ -36,24 +36,10 @@ describe("Test controller service", () => {
             });
             service = await broker.createService(Controller, Object.assign({ 
                 name: "v1.control",
-                mixins: [Store()],
-                settings: {
-                    db: {
-                        uri: process.env.URI,
-                        user: "neo4j",
-                        password: "neo4j"
-                    }
-                }
+                mixins: [Store()]
             }));
             queryService = await broker.createService(Query, Object.assign({ 
-                name: "v1.query",
-                settings: {
-                    db: {
-                        uri: process.env.URI,
-                        user: "neo4j",
-                        password: "neo4j"
-                    }
-                }
+                name: "v1.query"
             }));
             // Start additional services
             [Agents].map(service => { return broker.createService(service); }); 
