@@ -36,7 +36,10 @@ describe("Test controller service", () => {
             });
             service = await broker.createService(Controller, Object.assign({ 
                 name: "v1.control",
-                mixins: [Store()]
+                mixins: [Store()],
+                settings: {
+                    services: {}
+                }
             }));
             queryService = await broker.createService(Query, Object.assign({ 
                 name: "v1.query"

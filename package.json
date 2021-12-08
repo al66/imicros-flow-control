@@ -1,6 +1,6 @@
 {
   "name": "imicros-flow-control",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Moleculer services for process definition and control of imicros-flow",
   "main": "index.js",
   "engines" : { "node" : ">=14.15" },
@@ -50,13 +50,13 @@
   },
   "homepage": "https://github.com/al66/imicros-flow-control#readme",
   "devDependencies": {
-    "jest": "^27.3.1",
+    "jest": "^27.4.3",
     "moleculer": "^0.14.18",
     "uuid": "^8.3.2"
   },
   "dependencies": {
-    "fast-xml-parser": "^3.21.0",
+    "fast-xml-parser": "^3.21.1",
     "lodash": "^4.17.21",
-    "neo4j-driver": "^4.3.4"
+    "neo4j-driver": "^4.4.1"
   }
 }
