@@ -73,6 +73,7 @@ describe("Test controller service", () => {
                     processId: expect.any(String),
                     versionId: expect.any(String)
                 });
+                // console.log(res);
                 process = res;
             });
                 
