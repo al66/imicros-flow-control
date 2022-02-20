@@ -1,6 +1,6 @@
 {
   "name": "imicros-flow-control",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "Moleculer services for process definition and control of imicros-flow",
   "main": "index.js",
   "engines": {

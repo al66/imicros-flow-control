@@ -367,9 +367,27 @@ describe("Test controller service", () => {
                 expect(res.name).toEqual("UserRequestResetPassword.bpmn");
             });
         });
-        
+
+        it("it should deploy test process", async () => {
+            load(ownerId,"External triggered event.bpmn","assets/External triggered event.bpmn");
+            let params = {
+                name: "External triggered event.bpmn"
+            };
+            return broker.call("v1.control.deployProcess", params, opts).then(res => {
+                expect(res).toBeDefined();
+                // console.log(util.inspect(res, {showHidden: false, depth: null}));
+                expect(res).toEqual({
+                    processId: expect.any(String),
+                    versionId: expect.any(String)
+                });
+                // console.log(res);
+                process = res;
+            });
+                
+        });
+
     });
-    
+
     describe("Test stop broker", () => {
         it("should stop the broker", async () => {
             expect.assertions(1);
