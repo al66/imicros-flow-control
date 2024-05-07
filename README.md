@@ -3,6 +3,8 @@
 
 [Moleculer](https://github.com/moleculerjs/moleculer) services for process definitions and control of imicros-flow
 
+> [!IMPORTANT]  
+> Moved to/integrated in imicros-core.
 
 ## Installation
 ```
